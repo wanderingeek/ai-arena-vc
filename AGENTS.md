@@ -22,9 +22,33 @@ two AI models are shown side by side for comparison. No voting, no streaming.
 
 ## UI (Gradio)
 - `Blocks` layout: prompt `TextBox` → Submit (primary) + Clear buttons → two
-  side-by-side output `TextBox`es labeled with each model name.
+  side-by-side output `Markdown` components labeled with each model name.
+- Outputs are `gr.Markdown` (NOT `gr.Textbox`) so model responses that contain
+  Markdown (bold, code, **tables**, etc.) render formatted instead of showing
+  raw syntax like `| --- |`. Each output uses `max_height=420` (scrollable) and
+  `buttons=["copy"]` to preserve a copy affordance. The prompt stays a `Textbox`
+  because it is user input.
 - Enter key in the prompt box also triggers Submit.
 - **Clear** resets the prompt and both outputs so the user can try a new prompt.
+
+## Loading feedback (important)
+- The app calls `demo.queue()` before `demo.launch()`, and every trigger passes
+  `queue=True` explicitly (e.g. `submit_btn.click(fn=compare, ..., queue=True)`).
+  This is what makes Gradio show a **spinner on the Submit button and auto-disable
+  it** while the (slow) parallel model calls run, so the user knows the request
+  was sent.
+- **Do NOT split the Submit handler into a `show_waiting().then(compare)` chain**
+  to show a "Waiting…" placeholder. We tried this: the instant first step releases
+  the button early, so the spinner/disable never engages and the button stays
+  active — worse UX than the queue alone. The single queued `compare()` call is
+  the reliable pattern; the spinner + disabled button is sufficient feedback.
+
+## Styling
+- Font sizes are bumped ~3pt above Gradio's defaults via a `css=` override on the
+  `gr.Blocks` (see `main.py`): `--body-text-size` and the `--text-*` scale
+  variables are raised so all elements grow proportionally while preserving the
+  heading/title hierarchy. Keep this proportional (don't use a blanket
+  `.gradio-container *` rule that flattens every element to one size).
 
 ## Project structure
 - `main.py` — Groq client, `get_response()`, `compare()` (parallel), and the

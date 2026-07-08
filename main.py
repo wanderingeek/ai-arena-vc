@@ -43,8 +43,15 @@ def compare(prompt: str):
 with gr.Blocks(
     title="AI Arena (Groq)",
     css="""
-    :root { --body-text-size: 17px; }
-    .gradio-container, .gradio-container * { font-size: 17px; }
+    :root {
+      --body-text-size: 17px;
+      --text-md: 17px;
+      --text-lg: 19px;
+      --text-xl: 22px;
+      --text-xxl: 28px;
+    }
+    .gradio-container { font-size: var(--body-text-size); }
+    .gradio-container textarea, .gradio-container input { font-size: 16px; }
     """,
 ) as demo:
     gr.Markdown("# AI Arena — compare two models on Groq")
@@ -63,11 +70,23 @@ with gr.Blocks(
         clear_btn = gr.Button("Clear")
 
     with gr.Row():
-        out_a = gr.Textbox(label=f"Model A: {MODEL_A}", lines=12)
-        out_b = gr.Textbox(label=f"Model B: {MODEL_B}", lines=12)
+        out_a = gr.Markdown(
+            label=f"Model A: {MODEL_A}",
+            max_height=420,
+            buttons=["copy"],
+        )
+        out_b = gr.Markdown(
+            label=f"Model B: {MODEL_B}",
+            max_height=420,
+            buttons=["copy"],
+        )
 
-    submit_btn.click(fn=compare, inputs=prompt_box, outputs=[out_a, out_b])
-    prompt_box.submit(fn=compare, inputs=prompt_box, outputs=[out_a, out_b])
+    submit_btn.click(
+        fn=compare, inputs=prompt_box, outputs=[out_a, out_b], queue=True
+    )
+    prompt_box.submit(
+        fn=compare, inputs=prompt_box, outputs=[out_a, out_b], queue=True
+    )
     clear_btn.click(
         fn=lambda: ("", "", ""),
         inputs=None,
@@ -75,4 +94,5 @@ with gr.Blocks(
     )
 
 if __name__ == "__main__":
+    demo.queue()
     demo.launch()
